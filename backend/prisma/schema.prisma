@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  role          UserRole  @default(RIDER)
+  profile       Profile?
+  horses        Horse[]   @relation("owner")
+  ridingShares  Horse[]   @relation("ridingParticipants")
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Profile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  firstName       String
+  lastName        String
+  phone           String?
+  address         String?
+  emergencyName   String?
+  emergencyPhone  String?
+  emergencyRelation String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Horse {
+  id                String    @id @default(cuid())
+  name              String
+  ownerId           String
+  owner             User      @relation("owner", fields: [ownerId], references: [id])
+  ridingParticipants User[]   @relation("ridingParticipants")
+  birthDate         DateTime
+  breed             String
+  color             String
+  boxNumber         String
+  healthRecords     HealthRecord[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model HealthRecord {
+  id          String    @id @default(cuid())
+  horseId     String
+  horse       Horse     @relation(fields: [horseId], references: [id])
+  type        String
+  date        DateTime
+  nextDate    DateTime?
+  veterinarian String
+  diagnosis   String?
+  treatment   String?
+  medications String[]
+  notes       String?
+  documents   Document[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Document {
+  id            String        @id @default(cuid())
+  healthRecordId String?
+  healthRecord  HealthRecord? @relation(fields: [healthRecordId], references: [id])
+  title         String
+  description   String?
+  category      String
+  fileUrl       String
+  fileType      String
+  fileSize      Int
+  uploadedBy    String
+  accessLevel   String
+  tags          String[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Facility {
+  id          String    @id @default(cuid())
+  name        String
+  type        String
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Booking {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  facilityId  String
+  facility    Facility  @relation(fields: [facilityId], references: [id])
+  startTime   DateTime
+  endTime     DateTime
+  title       String
+  description String?
+  status      String    @default("confirmed")
+  payment     Payment?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  bookingId   String    @unique
+  booking     Booking   @relation(fields: [bookingId], references: [id])
+  amount      Float
+  currency    String
+  method      String
+  status      String
+  mollieId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  unit        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  INSTRUCTOR
+  STABLE_MANAGER
+  RIDER
+}
